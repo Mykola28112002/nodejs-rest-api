@@ -1,15 +1,20 @@
 const express = require('express')
 const contacts = require("../../models/contacts");
+const validateReqBody = require("./validation");
 
-const schemaPut = require('./validatePut')
-const validatePost = require('./validatePost')
+const {
+  schemaPutContact,
+  schemaPostContact,
+} = require("./shema");
+
 const router = express.Router()
 
 router.get('/', async (req, res, next) => {
-  res.json(await contacts.listContacts())
+  const result = await contacts.listContacts();
+  res.json(result)
 })
 
-router.get(`/:contactId`, async (req, res, next) => {
+router.get('/:contactId', async (req, res, next) => {
   const id = req.params.contactId;
   const result = await contacts.getContactById(id)
   if (result === null) {
@@ -20,11 +25,11 @@ router.get(`/:contactId`, async (req, res, next) => {
   }
 })
 
-router.post('/', async (req, res, next) => {
-  const { name, email, phone } = req.query;
+router.post('/',validateReqBody(schemaPostContact), async (req, res, next) => {
+  const body = req.query;
   try {
-    const value = await validatePost.validateAsync({ name, email, phone });
-    res.status(201).json(await contacts.addContact(value))
+    const result = await contacts.addContact(body)
+    res.status(201).json(result)
   }
   catch (err) { 
     res.status(404).json({ "message": err.details.map(e =>  e.message)})
@@ -41,14 +46,12 @@ router.delete('/:contactId', async (req, res, next) => {
   }
 })
 
-router.put('/:contactId', async (req, res, next) => {
+router.put('/:contactId',validateReqBody(schemaPutContact), async (req, res, next) => {
   const id = req.params.contactId;
-  const { name, email, phone } = req.query;
   try {
-    const value = await schemaPut.validateAsync({ name, email, phone });
-    const reply = await contacts.updateContact(id, value)
-    if (reply !== null) {
-      res.status(200).json(reply)
+    const result = await contacts.updateContact(id, req.query)
+    if (result !== null) {
+      res.status(200).json(result)
     } else {
       res.status(404).json({"message": "Not found"})
     }
@@ -59,4 +62,4 @@ router.put('/:contactId', async (req, res, next) => {
 })
 
 
-module.exports = router
+module.exports = router;

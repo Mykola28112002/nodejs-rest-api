@@ -33,18 +33,14 @@ const addContact = async ({name, email, phone}) => {
   return newContact;
 }
 
-const updateContact = async (id, {name, email, phone}) => {
+const updateContact = async (id, body) => {
   const data = await listContacts();
   const index = data.findIndex((c) => c.id === id);
   if (index === -1) return null;
-  const contact = data[index]
-  name = name || contact.name
-  email = email || contact.email
-  phone = phone || contact.phone
-  const newContact = { id, name , email , phone };
-  data.splice(index, 1, newContact);
+  const contact = { ...data[index], ...body };
+  data[index] = contact;
   await fs.writeFile(contactsPath, JSON.stringify(data));
-  return newContact;
+  return contact;
 }
 
 module.exports = {
