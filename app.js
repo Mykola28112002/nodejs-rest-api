@@ -1,5 +1,5 @@
 const express = require("express");
-const { contactsRouter } = require("./routes/api/contactsRoute");
+const { contactsRouter } = require("./routes/api/contactsRouter");
 const { userRouter } = require("./routes/api/userRouter");
 const cors = require("cors");
 const morgan = require("morgan");
