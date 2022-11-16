@@ -2,6 +2,7 @@
 const { Contact } = require("../Validations/contactShema");
 const { createNotFoundHttpError } = require("../helpers/index");
 
+
 async function getAll(req, res, next) {
     const { _id: owner } = req.user;
     const { limit, page } = req.query;
