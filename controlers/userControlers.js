@@ -82,18 +82,23 @@ async function current(req, res, next) {
 }
 
 async function avatars(req, res, next) {
-  const { user } = req;
-  const newPath = path.join("public/avatars", req.file.filename)
-  await fs.rename(req.file.path, newPath)
-
-  const avatars = await Jimp.read(newPath, (err, image) => {
-  if (err) throw err;
-    image.resize(250, 250) 
-  });
- 
+  const { user, file } = req;
   
+  const newPath = path.join("public/avatars", file.filename)
+  await fs.rename(file.path, newPath)
+
+  const avatars = await Jimp.read(newPath)
+    .then(wgrg => {
+    return wgrg
+      .resize(250, 250)
+      .quality(60)
+      .write(newPath);
+  })
+  .catch(err => {
+    console.error(err);
+  });
   console.log(avatars)
-  user.avatarURL = avatars;
+  user.avatarURL = newPath;
   const result = await User.findByIdAndUpdate(user._id, user, { new: true });
   if (!result) {
     throw new Unauthorized("Not found");
