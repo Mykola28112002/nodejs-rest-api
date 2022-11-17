@@ -49,6 +49,10 @@ async function login(req, res, next) {
   return res.json({
     data: {
       token,
+      user: {
+        email: user.email,
+        subscription: user.subscription
+      }
     },
   });
 }
