@@ -43,7 +43,6 @@ async function login(req, res, next) {
   }
 
   const token = jwt.sign({ _id: user._id }, JWT_SECRET);
-  console.log(subscription)
   user.token = token; 
   user.subscription = subscription;
   await User.findByIdAndUpdate(user._id, user);
