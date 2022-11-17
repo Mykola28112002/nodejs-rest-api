@@ -31,19 +31,21 @@ async function register(req, res, next) {
 
 async function login(req, res, next) {
 
-  const { email, password } = req.body;
+  const { email, password, subscription = "starter" } = req.body;
   const user = await User.findOne({ email });
   if (!user) {
     throw new Unauthorized("User does not exists");
   }
+
   const isPasswordTheSame = await bcrypt.compare(password, user.password);
   if (!isPasswordTheSame) {
     throw new Unauthorized("wrong password");
   }
 
   const token = jwt.sign({ _id: user._id }, JWT_SECRET);
-
-  user.token = token;
+  console.log(subscription)
+  user.token = token; 
+  user.subscription = subscription;
   await User.findByIdAndUpdate(user._id, user);
 
   return res.json({
