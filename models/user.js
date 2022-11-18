@@ -6,32 +6,31 @@ const jwt = require("jsonwebtoken");
 const { JWT_SECRET } = process.env;
 
 async function register(req, res, next) {
-  const { email, password } = req.body;
+  const { email, password, subscription = "starter"  } = req.body;
   const bcryptPassword = await bcrypt.hash(password, 10)
 
-  const user = new User({ email, password:bcryptPassword });
+  const user = new User({ email, password: bcryptPassword, subscription});
   try {
     await user.save();
   } catch (error) {
     if (error.message.includes("duplicate key error collection")) {
       throw new Conflict("User with this email already registered");
     }
-
     throw error;
   }
-
-  return res.status(201).json({
+  return res.json({
     data: {
       user: {
-        _id: user._id,
-      },
+        email: user.email,
+        subscription: user.subscription
+      }
     },
   });
 }
 
 async function login(req, res, next) {
 
-  const { email, password, subscription = "starter" } = req.body;
+  const { email, password} = req.body;
   const user = await User.findOne({ email });
   if (!user) {
     throw new Unauthorized("User does not exists");
@@ -44,15 +43,13 @@ async function login(req, res, next) {
 
   const token = jwt.sign({ _id: user._id }, JWT_SECRET);
   user.token = token; 
-  user.subscription = subscription;
   await User.findByIdAndUpdate(user._id, user);
 
   return res.json({
     data: {
       token,
       user: {
-        email: user.email,
-        subscription: user.subscription
+        email: user.email
       }
     },
   });
