@@ -9,10 +9,10 @@ const gravatar = require('gravatar');
 const Jimp = require('jimp');
 
 async function register(req, res, next) {
-  const { email, password } = req.body;
+  const { email, password, subscription = "starter" } = req.body;
   const bcryptPassword = await bcrypt.hash(password, 10)
-  const avatar = gravatar.url(email,{s: '250'});
-  const user = new User({ email, password:bcryptPassword, avatarURL: avatar});
+  const avatar = gravatar.url(email, { s: '250' });
+  const user = new User({ email, password:bcryptPassword, avatarURL: avatar, subscription});
   try {
     await user.save();
   } catch (error) {
@@ -23,18 +23,19 @@ async function register(req, res, next) {
     throw error;
   }
 
-  return res.status(201).json({
+  return res.json({
     data: {
       user: {
-        _id: user._id,
-      },
+        email: user.email,
+        subscription: user.subscription
+      }
     },
   });
 }
 
 async function login(req, res, next) {
 
-  const { email, password, subscription = "starter" } = req.body;
+  const { email, password } = req.body;
   const user = await User.findOne({ email });
   if (!user) {
     throw new Unauthorized("User does not exists");
@@ -47,7 +48,6 @@ async function login(req, res, next) {
 
   const token = jwt.sign({ _id: user._id }, JWT_SECRET);
   user.token = token; 
-  user.subscription = subscription;
   await User.findByIdAndUpdate(user._id, user);
 
   return res.json({
@@ -55,7 +55,6 @@ async function login(req, res, next) {
       token,
       user: {
         email: user.email,
-        subscription: user.subscription
       }
     },
   });
