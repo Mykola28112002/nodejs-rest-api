@@ -1,5 +1,5 @@
 const express = require("express");
-const userControlers = require("../controlers/user");
+const userControlers = require("../contacts/user");
 const { tryCatchWrapper } = require("../helpers/index");
 const { userMiddlewares } = require("../middleweras/userMiddlewares");
 const { upload } = require('../middleweras/uploadAvatars');
