@@ -1,7 +1,9 @@
 
-const {Schema,model} = require('mongoose')
+const { Schema, model } = require('mongoose')
+
 const usertSchema = new Schema(
-   {
+    {
+    
     password: {
         type: String,
         required: [true, 'Set password for user'],
@@ -15,8 +17,9 @@ const usertSchema = new Schema(
         type: String,
         enum: ["starter", "pro", "business"],
         default: "starter"
-    },
-    token: String
+        },
+    avatarURL: String,
+    token: String,
     },
     {
         timestamps: true,

@@ -2,22 +2,27 @@ const { User } = require("../Validations/userShema");
 const { Conflict, Unauthorized } = require("http-errors");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
-
 const { JWT_SECRET } = process.env;
+const fs = require('fs/promises');
+const path = require('path');
+const gravatar = require('gravatar');
+const Jimp = require('jimp');
 
 async function register(req, res, next) {
-  const { email, password, subscription = "starter"  } = req.body;
+  const { email, password, subscription = "starter" } = req.body;
   const bcryptPassword = await bcrypt.hash(password, 10)
-
-  const user = new User({ email, password: bcryptPassword, subscription});
+  const avatar = gravatar.url(email, { s: '250' });
+  const user = new User({ email, password:bcryptPassword, avatarURL: avatar, subscription});
   try {
     await user.save();
   } catch (error) {
     if (error.message.includes("duplicate key error collection")) {
       throw new Conflict("User with this email already registered");
     }
+
     throw error;
   }
+
   return res.json({
     data: {
       user: {
@@ -30,7 +35,7 @@ async function register(req, res, next) {
 
 async function login(req, res, next) {
 
-  const { email, password} = req.body;
+  const { email, password } = req.body;
   const user = await User.findOne({ email });
   if (!user) {
     throw new Unauthorized("User does not exists");
@@ -49,7 +54,7 @@ async function login(req, res, next) {
     data: {
       token,
       user: {
-        email: user.email
+        email: user.email,
       }
     },
   });
@@ -58,21 +63,52 @@ async function login(req, res, next) {
 async function logout(req, res, next) {
   const { user } = req;
   user.token = null;
-  await User.findByIdAndUpdate(user._id, user);
-
+  const result = await User.findByIdAndUpdate(user._id, user);
+   
+  if (!result) {
+    throw new Unauthorized("Not found");
+  }
   return res.json({});
 }
 
 async function current(req, res, next) {
   const { user } = req;
   const currentUser = await User.findById(user._id,{email: 1, subscription: 1, _id: 0});
-
+  if (!currentUser) {
+    throw new Unauthorized("Not found");
+  }
   return res.json({currentUser});
+}
+
+async function avatars(req, res, next) {
+  const { user, file } = req;
+  
+  const newPath = path.join("public/avatars", file.filename)
+  await fs.rename(file.path, newPath)
+
+  const avatars = await Jimp.read(newPath)
+    .then(wgrg => {
+    return wgrg
+      .resize(250, 250)
+      .quality(60)
+      .write(newPath);
+  })
+  .catch(err => {
+    console.error(err);
+  });
+  console.log(avatars)
+  user.avatarURL = newPath;
+  const result = await User.findByIdAndUpdate(user._id, user, { new: true });
+  if (!result) {
+    throw new Unauthorized("Not found");
+  }
+  return res.json({"avatarURL": result});
 }
 
 module.exports = {
   register,
   login,
   logout,
-  current
+  current,
+  avatars
 };
