@@ -21,7 +21,6 @@ async function ROSTverify(req, res, next) {
   }
   if (!user.verify) {
     const { email, password, verificationToken } = user;
-    console.log(email, password, verificationToken)
     await sendEmail({ email, password, token: verificationToken });
     return res.json({message: "Verification email sent" });
   } else {
