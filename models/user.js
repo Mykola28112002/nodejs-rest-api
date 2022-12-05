@@ -12,9 +12,6 @@ const { nanoid } = require('nanoid');
 
 async function ROSTverify(req, res, next) {
   const { email } = req.body;
-  if (!email) {
-    throw new NotFound("missing required field email")
-  }
   const user = await User.findOne({ email });
   if (!user) {
     throw new NotFound("No user found")
