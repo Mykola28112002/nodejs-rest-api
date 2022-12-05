@@ -2,16 +2,16 @@ const express = require('express');
 const contactsControlers = require('../../models/contacts');
 const { userMiddlewares } = require('../../middleweras/userMiddlewares');
 const { tryCatchWrapper } = require("../../helpers/index");
-
+const { contactSchemaJoi,  favoriteContactSchema } = require("../../Validations/contactShema");
 const contactsRouter = express.Router();
 
 contactsRouter.use(userMiddlewares);
 contactsRouter.get('/', tryCatchWrapper(contactsControlers.getAll));
 contactsRouter.get('/:id', tryCatchWrapper(contactsControlers.findOneById));
-contactsRouter.post('/', tryCatchWrapper(contactsControlers.create));
+contactsRouter.post('/',tryCatchWrapper(contactSchemaJoi), tryCatchWrapper(contactsControlers.create));
 contactsRouter.delete('/:id', tryCatchWrapper(contactsControlers.deleteById));
-contactsRouter.put('/:id', tryCatchWrapper(contactsControlers.updateById));
-contactsRouter.patch("/:contactId/favorite", tryCatchWrapper(contactsControlers.updateStatusContact));
+contactsRouter.put('/:id',tryCatchWrapper(contactSchemaJoi), tryCatchWrapper(contactsControlers.updateById));
+contactsRouter.patch("/:contactId/favorite",tryCatchWrapper(favoriteContactSchema), tryCatchWrapper(contactsControlers.updateStatusContact));
 
 module.exports = {
   contactsRouter,
