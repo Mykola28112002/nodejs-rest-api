@@ -28,7 +28,7 @@ async function create(req, res, next) {
         data: {
         contacts: createdContact,
         },
-    });
+        });
     }
 }
 
