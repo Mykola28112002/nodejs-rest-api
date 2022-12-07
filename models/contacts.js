@@ -3,6 +3,7 @@ const { Contact } = require("../Validations/contactShema");
 const { createNotFoundHttpError } = require("../helpers/index");
 
 
+
 async function getAll(req, res, next) {
     const { _id: owner } = req.user;
     const { limit, page } = req.query;
@@ -27,7 +28,7 @@ async function create(req, res, next) {
         data: {
         contacts: createdContact,
         },
-    });
+        });
     }
 }
 
@@ -56,7 +57,7 @@ async function updateById(req, res, next) {
     const { id } = req.params;
     const updateContact = await Contact.findByIdAndUpdate(id, req.body, { new: true });
     if (!updateContact) {
-        throw new NotFound(`Contact with id=${id} not found`);
+        throw new createNotFoundHttpError(`Contact with id=${id} not found`);
     }
     return res.status(201).json({contact: updateContact});
 }
@@ -66,7 +67,7 @@ async function updateStatusContact(req, res, next) {
     const { favorite } = req.body;
     const result = await Contact.findByIdAndUpdate(contactId, { favorite }, { new: true });
     if (!result) {
-        throw new NotFound(`Not found`);
+        throw new createNotFoundHttpError(`Not found`);
     }
     return res.status(200).json({ status: "success", code: 200, data: { result }, });
 };

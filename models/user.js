@@ -1,5 +1,5 @@
 const { User } = require("../Validations/userShema");
-const { Conflict, Unauthorized } = require("http-errors");
+const { Conflict, Unauthorized, NotFound } = require("http-errors");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 const { JWT_SECRET } = process.env;
@@ -7,22 +7,59 @@ const fs = require('fs/promises');
 const path = require('path');
 const gravatar = require('gravatar');
 const Jimp = require('jimp');
+const { sendEmail } = require('../middleweras/nodemailer');
+const { nanoid } = require('nanoid');
+
+async function ROSTverify(req, res, next) {
+  const { email } = req.body;
+  const user = await User.findOne({ email });
+  if (!user) {
+    throw new NotFound("No user found")
+  }
+  if (!user.verify) {
+    const { email, password, verificationToken } = user;
+    await sendEmail({ email, password, token: verificationToken });
+    return res.json({message: "Verification email sent" });
+  } else {
+    return res.json({message: "Verification has already been passed"});
+  }
+}
+
+async function verify(req, res, next) {
+  const { token } = req.params;
+  const user = await User.findOne({ verificationToken: token });
+  if (!user) {
+    throw new NotFound("No user found")
+  }
+  if (user && !user.verify) {
+    await User.findByIdAndUpdate(user._id, {
+      verify: true
+    })
+    return res.json({message: 'Verification successful'});
+  }
+  if (user && user.verify) {
+    return res.json({message: 'Your email already verified'});
+  } else {
+    return res.json({message: 'User not found'});
+  }
+}
+
 
 async function register(req, res, next) {
+  const verificationToken = nanoid();
   const { email, password, subscription = "starter" } = req.body;
   const bcryptPassword = await bcrypt.hash(password, 10)
   const avatar = gravatar.url(email, { s: '250' });
-  const user = new User({ email, password:bcryptPassword, avatarURL: avatar, subscription});
+  const user = new User({ email, password: bcryptPassword, avatarURL: avatar, subscription, verificationToken });
   try {
     await user.save();
+    await sendEmail({email, password,  verificationToken})
   } catch (error) {
     if (error.message.includes("duplicate key error collection")) {
       throw new Conflict("User with this email already registered");
     }
-
     throw error;
   }
-
   return res.json({
     data: {
       user: {
@@ -39,6 +76,9 @@ async function login(req, res, next) {
   const user = await User.findOne({ email });
   if (!user) {
     throw new Unauthorized("User does not exists");
+  }
+  if (!user.verify) {
+    throw new Unauthorized("Email is not verifyed");
   }
 
   const isPasswordTheSame = await bcrypt.compare(password, user.password);
@@ -110,5 +150,7 @@ module.exports = {
   login,
   logout,
   current,
-  avatars
+  avatars,
+  verify,
+  ROSTverify
 };
